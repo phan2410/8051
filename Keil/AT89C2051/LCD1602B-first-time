@@ -1,0 +1,91 @@
+#include<AT892051.H>
+
+#define LCD_RS P3_4
+#define LCD_RW P3_5
+#define LCD_EN P3_7
+
+#define LCD_D0 P1_0
+#define LCD_D1 P1_1
+#define LCD_D2 P1_2
+#define LCD_D3 P1_3
+
+#define LCD_D4 P1_4
+#define LCD_D5 P1_5
+#define LCD_D6 P1_6
+#define LCD_D7 P1_7
+
+unsigned temp;
+
+void delay(unsigned us){//12MHz quarz seems 1 simplest instruction take at most 2us
+		unsigned i;
+		unsigned dead=(us+1)*10;
+		for(i=0;i<dead;i++);
+}
+
+void CHK_BUSY(){
+	LCD_RS=0;
+	LCD_RW=1;
+	LCD_EN=1;
+	while(LCD_D7);
+	LCD_EN=0;
+}
+
+void WRINS_CHK(){
+	CHK_BUSY();
+}
+
+void WRINS_NOCHK(){
+	LCD_RS=0;
+	LCD_RW=0;
+	LCD_EN=1;
+	P1=temp;
+	LCD_EN=0;
+	P1=0xFF;//for check busy flag
+}
+
+void LCD_init(){
+	delay(40000);
+	temp=0x38;//function set
+	WRINS_NOCHK();
+	delay(40);//function set
+	WRINS_NOCHK();
+	delay(40);
+	temp=0x0F;//display on
+	WRINS_CHK();
+	delay(40);
+	temp=0x01;//clear display
+	WRINS_CHK();
+	delay(1520);
+	temp=0x06;//entry mode set
+	WRINS_CHK();//cursor move to right
+	delay(40);	
+}
+
+void LCD_cursor(unsigned char x, unsigned char y){
+	unsigned char address;
+	if (!y) address=(0x80+x);
+	else address=(0xc0+x);
+	LCD_RS=0;
+	LCD_RW=0;
+	//chua xong
+}
+
+void LCD_putchar(unsigned char ch){
+	LCD_RS=1;
+	LCD_RW=1;
+	delay(3);
+	LCD_RW=0;
+	LCD_EN=1;
+	delay(3);
+	P1=ch;
+	LCD_EN=0;
+	LCD_RS=0;
+	delay(40);	
+}
+
+void main(void){//12MHz quarzt 
+	delay(65000);//delay for voltage and current stabilized
+	LCD_init();	
+	delay(1000);
+	LCD_putchar('A');	
+}

@@ -1,0 +1,4 @@
+"STARTUP.obj",
+"Encoder2LCD.obj" 
+TO "encoder-LCD" 
+RAMSIZE(256) 

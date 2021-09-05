@@ -1,0 +1,53 @@
+C51 COMPILER V9.01   SIGNAL_GENERATOR_CODE                                                 02/16/2015 00:06:00 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE SIGNAL_GENERATOR_CODE
+OBJECT MODULE PLACED IN .\Objects\Signal-Generator-code.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Signal-Generator-code.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRIN
+                    -T(.\Listings\Signal-Generator-code.lst) TABS(2) OBJECT(.\Objects\Signal-Generator-code.obj)
+
+line level    source
+
+   1          //12Mhz crystal => 1Mhz tick for timer (machine cycle=12 x clock cycle), MAX 46,875KHz
+   2          #include <AT892051.H>
+   3          #include <stdlib.h>
+   4          unsigned tmr1loop,TH0value;
+   5          void tmr0isr(void) interrupt TF0_VECTOR {
+   6   1        P3_7=~P3_7;
+   7   1      }
+   8          void tmr1isr(void) interrupt TF1_VECTOR {
+   9   1        if(--tmr1loop==0){
+  10   2          TH0=rand()%1000+100;
+  11   2          tmr1loop=400;
+  12   2        }
+  13   1      }
+  14          void main(void){
+  15   1          P3_7=1;
+  16   1          EA=1;
+  17   1          ET0=1;
+  18   1          ET1=1;
+  19   1          TMOD=0x22;
+  20   1          TL1=6;
+  21   1          TH1=6;
+  22   1          TL0=131;
+  23   1          TH0=131;
+  24   1          tmr1loop=400;
+  25   1          TR1=1;
+  26   1          TR0=1;
+  27   1          srand(TH0);
+  28   1          while(1);
+  29   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    135    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      4    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

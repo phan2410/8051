@@ -1,0 +1,178 @@
+C51 COMPILER V9.52.0.0   ENCODER2LCD                                                       05/16/2015 03:02:17 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE ENCODER2LCD
+OBJECT MODULE PLACED IN Encoder2LCD.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Encoder2LCD.c BROWSE DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          #include <AT89X52.H>
+   2          /********Khai bao chan giao tiep************/
+   3          #define LCD_RS P2_0
+   4          #define LCD_RW P2_1
+   5          #define LCD_EN P2_2
+   6          #define LCD_D4 P2_4
+   7          #define LCD_D5 P2_5
+   8          #define LCD_D6 P2_6
+   9          #define LCD_D7 P2_7
+  10          /********************************************/
+  11          unsigned tmr1loop, count1, rps1, d0, d1, d2, d3, d4;
+  12          double temp;
+  13          unsigned pass1;
+  14          /************************************/
+  15          void delay_us(unsigned int t){
+  16   1              unsigned int i;
+  17   1              for(i=0;i<t;i++);
+  18   1      }
+  19          void delay_ms(unsigned int t){
+  20   1              unsigned int i,j;
+  21   1              for(i=0;i<t;i++)
+  22   1              for(j=0;j<125;j++);
+  23   1      }
+  24          /**************Ctr giao tiep LCD 16x2 4bit**********************/
+  25          void LCD_Enable(void){
+  26   1              LCD_EN =1;
+  27   1              delay_us(3);
+  28   1              LCD_EN=0;
+  29   1              delay_us(50);
+  30   1      }
+  31          //Ham Gui 4 Bit Du Lieu Ra LCD
+  32          void LCD_Send4Bit(unsigned char Data){
+  33   1              LCD_D4=Data & 0x01;
+  34   1              LCD_D5=(Data>>1)&1;
+  35   1              LCD_D6=(Data>>2)&1;
+  36   1              LCD_D7=(Data>>3)&1;
+  37   1      }
+  38          // Ham Gui 1 Lenh Cho LCD
+  39          void LCD_SendCommand(unsigned char command){
+  40   1              LCD_Send4Bit(command >>4);/* Gui 4 bit cao */
+  41   1              LCD_Enable();
+  42   1              LCD_Send4Bit(command); /* Gui 4 bit thap*/
+  43   1              LCD_Enable();
+  44   1      }
+  45          void LCD_Clear(){// Ham Xoa Man Hinh LCD
+  46   1              LCD_SendCommand(0x01);
+  47   1              delay_us(10);
+  48   1      }
+  49          // Ham Khoi Tao LCD
+  50          void LCD_Init(){
+  51   1              LCD_Send4Bit(0x00);
+  52   1              delay_ms(20);
+  53   1              LCD_RS=0;
+  54   1              LCD_RW=0;
+  55   1              LCD_Send4Bit(0x03);
+C51 COMPILER V9.52.0.0   ENCODER2LCD                                                       05/16/2015 03:02:17 PAGE 2   
+
+  56   1              LCD_Enable();
+  57   1              delay_ms(5);
+  58   1              LCD_Enable();
+  59   1              delay_us(100);
+  60   1              LCD_Enable();
+  61   1              LCD_Send4Bit(0x02);
+  62   1              LCD_Enable();
+  63   1              LCD_SendCommand( 0x28 ); // giao thuc 4 bit, hien thi 2 hang, ki tu 5x8
+  64   1              LCD_SendCommand( 0x0c); // cho phep hien thi man hinh
+  65   1              LCD_SendCommand( 0x06 ); // tang ID, khong dich khung hinh
+  66   1              LCD_SendCommand(0x01); // xoa toan bo khung hinh
+  67   1      }
+  68          void LCD_Gotoxy(unsigned char x, unsigned char y){
+  69   1              unsigned char address;
+  70   1              if(!y)address=(0x80+x);
+  71   1              else address=(0xc0+x);
+  72   1              delay_us(1000);
+  73   1              LCD_SendCommand(address);
+  74   1              delay_us(50);
+  75   1      }
+  76          void LCD_PutChar(unsigned char Data){//Ham Gui 1 Ki Tu
+  77   1              LCD_RS=1;
+  78   1              LCD_SendCommand(Data);
+  79   1              LCD_RS=0 ;
+  80   1      }
+  81          void LCD_Puts (char *s){//Ham gui 1 chuoi ky tu
+  82   1              while (*s){
+  83   2                      LCD_PutChar(*s);
+  84   2                      s++;
+  85   2              }
+  86   1      }
+  87          /**************************RTOS****************************/
+  88          
+  89          void extint0isr() interrupt IE0_VECTOR{
+  90   1        if (!P3_2 && (pass1==0)){
+  91   2          pass1=1;
+  92   2        }
+  93   1      }
+  94          void extint1isr() interrupt IE1_VECTOR{
+  95   1        if ((pass1==1) && !P3_3) {
+  96   2          count1++;
+  97   2          pass1=0;
+  98   2        }
+  99   1      }
+ 100          void tmr1isr() interrupt TF1_VECTOR{
+ 101   1        if (--tmr1loop==1){
+ 102   2          TH1=0x7B;
+ 103   2          TL1=0x90;
+ 104   2        }else if(tmr1loop ==0){
+ 105   2          temp = count1/12 + 0.5;
+ 106   2          rps1= temp/1;
+ 107   2          count1=0;
+ 108   2          tmr1loop=31;
+ 109   2        }
+ 110   1      }
+ 111          /******************Ctr chinh**************************/
+ 112          void main(){
+ 113   1              LCD_Init();//Khoi tao LCD
+ 114   1              delay_ms(1000);
+ 115   1              LCD_Puts("Speed motor test !");//Gui chuoi len LCD
+ 116   1              delay_ms(1000);
+ 117   1              LCD_Clear();//Xoa man hinh
+C51 COMPILER V9.52.0.0   ENCODER2LCD                                                       05/16/2015 03:02:17 PAGE 3   
+
+ 118   1              LCD_Gotoxy(0,0);//Tro toi vi tri
+ 119   1              LCD_Puts("Process...");
+ 120   1              delay_ms(2000);
+ 121   1              LCD_Gotoxy(0,1);//Tro toi vi tri
+ 122   1              LCD_Puts("Start ...");
+ 123   1              IT0=1;//External interrupt 0 edge-triggered
+ 124   1              IT1=1;
+ 125   1              EA=1;
+ 126   1              ET1=1;
+ 127   1              EX1=1;
+ 128   1              EX0=1;      
+ 129   1              TMOD |= 0x10;
+ 130   1              TMOD &= 0x1F;
+ 131   1              delay_ms(1000); 
+ 132   1              LCD_Clear();
+ 133   1              delay_ms(300);
+ 134   1              LCD_Puts("Rps: ");
+ 135   1              tmr1loop=31;
+ 136   1              TR1=1;
+ 137   1              while(1){
+ 138   2                d4= rps1/10000;
+ 139   2                d3= (rps1%10000)/1000;
+ 140   2                d2= ((rps1%10000)%1000)/100;
+ 141   2                d1=(((rps1%10000)%1000)%100)/10;
+ 142   2                d0=(((rps1%10000)%1000)%100)%10;
+ 143   2                LCD_Gotoxy(5,0);
+ 144   2                LCD_PutChar('0'+d4);
+ 145   2                LCD_PutChar('0'+d3);
+ 146   2                LCD_PutChar('0'+d2);
+ 147   2                LCD_PutChar('0'+d1);
+ 148   2                LCD_PutChar('0'+d0);
+ 149   2              }
+ 150   1      }
+ 151          //THE END
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    737    ----
+   CONSTANT SIZE    =     46    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     22       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

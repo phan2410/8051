@@ -1,0 +1,4 @@
+".\Objects\STARTUP.obj",
+".\Objects\Signal-Generator-code.obj" 
+TO ".\Objects\Signal-Generator" 
+PRINT(".\Listings\Signal-Generator.m51")
